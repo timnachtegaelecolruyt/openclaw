@@ -1,21 +1,44 @@
 services:
   openclaw-gateway:
-    image: ${OPENCLAW_IMAGE:-openclaw:local}
+    image: ${OPENCLAW_IMAGE:-openclaw:secure}
     environment:
       HOME: /home/node
       TERM: xterm-256color
       OPENCLAW_GATEWAY_TOKEN: ${OPENCLAW_GATEWAY_TOKEN}
+      DISCORD_BOT_TOKEN: ${DISCORD_BOT_TOKEN}
       CLAUDE_AI_SESSION_KEY: ${CLAUDE_AI_SESSION_KEY}
       CLAUDE_WEB_SESSION_KEY: ${CLAUDE_WEB_SESSION_KEY}
       CLAUDE_WEB_COOKIE: ${CLAUDE_WEB_COOKIE}
     volumes:
       - ${OPENCLAW_CONFIG_DIR}:/home/node/.openclaw
       - ${OPENCLAW_WORKSPACE_DIR}:/home/node/.openclaw/workspace
+      - ${OPENCLAW_CONFIG_DIR}/agents:/home/node/.openclaw/agents
+      - ${OPENCLAW_CONFIG_DIR}/devices:/home/node/.openclaw/devices:rw
+      - ${OPENCLAW_CONFIG_DIR}/identity:/home/node/.openclaw/identity:rw
+      - ${OPENCLAW_CONFIG_DIR}/cron:/home/node/.openclaw/cron:rw
+      - ${OPENCLAW_CONFIG_DIR}/canvas:/home/node/.openclaw/canvas:rw
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./network-restrict.sh:/usr/local/bin/network-restrict.sh:ro
     ports:
-      - "${OPENCLAW_GATEWAY_PORT:-18789}:18789"
-      - "${OPENCLAW_BRIDGE_PORT:-18790}:18790"
+      - "127.0.0.1:${OPENCLAW_GATEWAY_PORT:-18789}:18789"
+      - "127.0.0.1:${OPENCLAW_BRIDGE_PORT:-18790}:18790"
+    networks:
+      - openclaw-isolated
+    extra_hosts:
+      - "host.docker.internal:172.29.208.1"
     init: true
     restart: unless-stopped
+    cap_drop:
+      - ALL
+    cap_add:
+      - NET_BIND_SERVICE
+      - NET_ADMIN
+      - SETUID
+      - SETGID
+    read_only: false
+    tmpfs:
+      - /tmp:mode=1777,size=1G
+    entrypoint: ["/usr/local/bin/network-restrict.sh"]
     command:
       [
         "node",
@@ -28,7 +51,7 @@ services:
       ]
 
   openclaw-cli:
-    image: ${OPENCLAW_IMAGE:-openclaw:local}
+    image: ${OPENCLAW_IMAGE:-openclaw:secure}
     environment:
       HOME: /home/node
       TERM: xterm-256color
@@ -40,7 +63,17 @@ services:
     volumes:
       - ${OPENCLAW_CONFIG_DIR}:/home/node/.openclaw
       - ${OPENCLAW_WORKSPACE_DIR}:/home/node/.openclaw/workspace
+    networks:
+      - openclaw-isolated
     stdin_open: true
     tty: true
     init: true
     entrypoint: ["node", "dist/index.js"]
+
+networks:
+  openclaw-isolated:
+    driver: bridge
+    internal: false  # Allows internet access, blocks other Docker networks
+    ipam:
+      config:
+        - subnet: 172.25.0.0/16  # Custom subnet isolated from other containers

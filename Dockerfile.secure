@@ -1,0 +1,13 @@
+# Extends openclaw:local with iptables for network security
+FROM openclaw:local
+
+# Install iptables and gosu as root
+USER root
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends iptables gosu && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/* && \
+    which iptables && iptables --version && \
+    which gosu
+
+# Container starts as root (to run iptables), then drops to node user in entrypoint script
