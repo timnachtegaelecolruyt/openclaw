@@ -44,17 +44,17 @@ const WebSearchSchema = Type.Object({
   country: Type.Optional(
     Type.String({
       description:
-        "2-letter country code for region-specific results (e.g., 'DE', 'US', 'ALL'). Default: 'US'.",
+        "2-letter ISO country code for region-specific results. Must be one of: AR, AU, AT, BE, BR, CA, CL, DK, FI, FR, DE, GR, HK, IN, ID, IT, JP, KR, MY, MX, NL, NZ, NO, CN, PL, PT, PH, RU, SA, ZA, ES, SE, CH, TW, TR, GB (NOT UK!), US, or ALL. Omit this parameter unless specifically requested.",
     }),
   ),
   search_lang: Type.Optional(
     Type.String({
-      description: "ISO language code for search results (e.g., 'de', 'en', 'fr').",
+      description: "Full locale code for search results (e.g., 'en-US', 'en-GB', 'de-DE', 'fr-FR'). NOT just 'en' or 'de'. Omit this parameter unless specifically requested.",
     }),
   ),
   ui_lang: Type.Optional(
     Type.String({
-      description: "ISO language code for UI elements.",
+      description: "Full locale code for UI elements (e.g., 'en-US', 'en-GB', 'de-DE', 'fr-FR'). NOT just 'en' or 'de'. Omit this parameter unless specifically requested.",
     }),
   ),
   freshness: Type.Optional(
